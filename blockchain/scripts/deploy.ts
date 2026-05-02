@@ -1,17 +1,34 @@
-// import { ethers } from "hardhat";
+import { network } from "hardhat";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// async function main() {
-//   const price = ethers.parseEther("0.01");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-//   const DigitalItem = await ethers.getContractFactory("DigitalItem");
-//   const contract = await DigitalItem.deploy(price);
+async function main() {
+  const { ethers } = await network.connect({ network: "sepolia" });
 
-//   await contract.waitForDeployment();
+  const price = ethers.parseEther("0.01");
 
-//   console.log("DigitalItem deployed to:", await contract.getAddress());
-// }
+  console.log("Deploying DigitalItem with price:", price.toString(), "wei");
 
-// main().catch((error) => {
-//   console.error(error);
-//   process.exitCode = 1;
-// });
+  const digitalItem = await ethers.deployContract("DigitalItem", [price]);
+  await digitalItem.waitForDeployment();
+
+  const address = await digitalItem.getAddress();
+  console.log("DigitalItem deployed to:", address);
+
+  // Save deployed address to file
+  const outputPath = path.join(__dirname, "..", "deployed-address.json");
+  fs.writeFileSync(
+    outputPath,
+    JSON.stringify({ address, network: "sepolia", price: price.toString() }, null, 2)
+  );
+  console.log("Deployed address saved to:", outputPath);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
